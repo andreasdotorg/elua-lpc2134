@@ -1,0 +1,18 @@
+What I did to track elua:
+
+$ git svn clone svn://svn.berlios.de/elua/trunk
+$ cd trunk
+$ git branch lpc2134
+$ git checkout lpc2134
+<hack away>
+$ git remote upload git@github.com:andreas23/elua-lpc2134.git
+$ git push upload lpc2134
+
+
+How I build my image:
+
+$ scons target=lualong board=tk102-2 cpumode=thumb allocator=simple prog
+
+and then load:
+
+$ lpc21ipc -term elua_lualong_lpc2134.hex /dev/ttyUSB0 57600 11059
