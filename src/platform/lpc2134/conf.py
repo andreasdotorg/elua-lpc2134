@@ -11,6 +11,7 @@ else:
     
 # Prepend with path
 specific_files = " ".join( [ "src/platform/%s/%s" % ( platform, f ) for f in specific_files.split() ] )
+specific_files += " src/platform/arm_utils.s src/platform/arm_cortex_interrupts.c"
 ldscript = "src/platform/%s/%s" % ( platform, ldscript )
 
 comp.Append(CPPDEFINES = ["FOR" + comp[ 'cpu' ],'gcc'])
@@ -34,7 +35,7 @@ comp.Prepend(ASFLAGS = [TARGET_FLAGS,'-D__ASSEMBLY__'])
 # Toolset data
 tools[ 'lpc2134' ] = {}
 
-# Programming function for LPC24xx
+# Programming function for LPC21xx
 def progfunc_lpx2134( target, source, env ):
   outname = output + ".elf"
   os.system( "%s %s" % ( toolset[ 'size' ], outname ) )

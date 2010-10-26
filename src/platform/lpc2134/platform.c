@@ -15,6 +15,8 @@
 #include "elua_adc.h"
 #include "platform_conf.h"
 #include "buf.h"
+#include "elua_int.h"
+//#include "arm_constants.h"
 
 // Platform includes
 #include "LPC214x.h"                        /* LPC213x/214x definitions */
@@ -25,6 +27,44 @@
 extern void enable_ints();
 extern void disable_ints();
 
+// *****************************************************************************
+// These interrupt handlers are the link to elua_int.c
+
+#if FIXME
+static PREG const posedge_status[] = { ( PREG )&IO0_INT_STAT_R, ( PREG )&IO2_INT_STAT_R };
+static PREG const negedge_status[] = { ( PREG )&IO0_INT_STAT_F, ( PREG )&IO2_INT_STAT_F };
+static PREG const intclr_regs[] = { ( PREG )&IO0_INT_CLR, ( PREG )&IO2_INT_CLR };
+#endif
+
+static void int_handler_eint3()
+{
+#if FIXME
+  elua_int_id id = ELUA_INT_INVALID_INTERRUPT;
+  pio_code resnum = 0;
+  int pidx, pin;
+  
+  EXTINT |= 1 << 3; // clear interrupt
+  // Look for interrupt source
+  // In can only be GPIO0/GPIO2, as the EXT interrupts are not (yet) used
+  pidx = ( IO_INT_STAT & 1 ) ? 0 : 1;
+  if( *posedge_status[ pidx ] )
+  {
+    id = INT_GPIO_POSEDGE;
+    pin = intlog2( *posedge_status[ pidx ] );
+  }
+  else
+  {
+    id = INT_GPIO_NEGEDGE;
+    pin = intlog2( *negedge_status[ pidx ] );
+  }
+  resnum = PLATFORM_IO_ENCODE( pidx * 2, pin, PLATFORM_IO_ENC_PIN );   
+  *intclr_regs[ pidx ] = 1 << pin;
+  
+  // Queue interrupt
+  elua_int_add( id, resnum );
+  VICVectAddr = 0; // ACK interrupt
+#endif    
+}
 // ****************************************************************************
 // Platform initialization
 
@@ -51,9 +91,16 @@ static void platform_setup_cpu()
   SCS |= 3;
 }
 
+// Setup all required interrupt handlers
+static void platform_setup_interrupts()
+{
+  install_irq( EINT3_INT, int_handler_eint3, HIGHEST_PRIORITY - 1 );   
+}
+
 // External memory initialization
 static void platform_setup_extmem()
 {
+  // don't have any
 }
 
 int platform_init()
@@ -75,6 +122,9 @@ int platform_init()
   platform_uart_send(0, 'b');
   //platform_setup_pwm();
   platform_uart_send(0, 'c');
+
+  // Setup interrupt handlers
+  platform_setup_interrupts();
 
 #ifdef BUILD_ADC
   // Setup ADCs
@@ -426,6 +476,64 @@ u32 platform_s_timer_op( unsigned id, int op, u32 data )
 
 // ****************************************************************************
 // CPU functions
+
+#if FIXME
+static PREG const posedge_regs[] = { ( PREG )&IO0_INT_EN_R, NULL, ( PREG )&IO2_INT_EN_R };
+static PREG const negedge_regs[] = { ( PREG )&IO0_INT_EN_F, NULL, ( PREG )&IO0_INT_EN_F };
+#endif
+
+// Helper: return the status of a specific interrupt (enabled/disabled)
+static int platform_cpuh_get_int_status( elua_int_id id, elua_int_resnum resnum )
+{
+#if FIXME
+  int port, pin;
+  
+  if( id == INT_GPIO_POSEDGE || id == INT_GPIO_NEGEDGE )
+  {
+    port = PLATFORM_IO_GET_PORT( resnum ); 
+    pin = PLATFORM_IO_GET_PIN( resnum ); 
+    if( id == INT_GPIO_POSEDGE )
+      return *posedge_regs[ port ] & ( 1 << pin );
+    else
+      return *negedge_regs[ port ] & ( 1 << pin );        
+  } 
+#endif
+  return 0;
+}
+
+int platform_cpu_set_interrupt( elua_int_id id, elua_int_resnum resnum, int status )
+{
+#if FIXME
+  int crt_status = platform_cpuh_get_int_status( id, resnum );
+  int port, pin;
+  
+  if( id == INT_GPIO_POSEDGE || id == INT_GPIO_NEGEDGE )
+  {
+    port = PLATFORM_IO_GET_PORT( resnum ); 
+    pin = PLATFORM_IO_GET_PIN( resnum ); 
+    if( id == INT_GPIO_POSEDGE )
+    {
+      if( status == PLATFORM_CPU_ENABLE )
+        *posedge_regs[ port ] |= 1 << pin;
+      else
+        *posedge_regs[ port ] &= ~( 1 << pin );       
+    }
+    else
+    {
+      if( status == PLATFORM_CPU_ENABLE )
+        *negedge_regs[ port ] |= 1 << pin;
+      else
+        *negedge_regs[ port ] &= ~( 1 << pin );         
+    }    
+  }
+  return crt_status;
+#endif
+}
+
+int platform_cpu_get_interrupt( elua_int_id id, elua_int_resnum resnum )
+{
+  return platform_cpuh_get_int_status( id, resnum );
+}
 
 void platform_cpu_enable_interrupts()
 {
