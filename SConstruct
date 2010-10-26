@@ -1,5 +1,4 @@
 import os, sys, shutil, string
-import platform  as syspl
 
 # Helper: "normalize" a name to make it a suitable C macro name
 def cnorm( name ):
@@ -76,9 +75,10 @@ platform_list = {
   'lpc288x' : { 'cpus' : [ 'LPC2888' ], 'toolchains' : [ 'arm-gcc', 'codesourcery', 'devkitarm', 'arm-eabi-gcc' ] },
   'str7' : { 'cpus' : [ 'STR711FR2' ], 'toolchains' : [ 'arm-gcc', 'codesourcery', 'devkitarm', 'arm-eabi-gcc' ] },
   'stm32' : { 'cpus' : [ 'STM32F103ZE', 'STM32F103RE' ], 'toolchains' : [ 'arm-gcc', 'codesourcery', 'devkitarm', 'arm-eabi-gcc' ] },
-  'avr32' : { 'cpus' : [ 'AT32UC3A0512', 'AT32UC3A0128', 'AT32UC3B0256' ], 'toolchains' : [ 'avr32-gcc' ] },
+  'avr32' : { 'cpus' : [ 'AT32UC3A0512', 'AT32UC3B0256' ], 'toolchains' : [ 'avr32-gcc' ] },
   'lpc24xx' : { 'cpus' : [ 'LPC2468' ], 'toolchains' : [ 'arm-gcc', 'codesourcery', 'devkitarm', 'arm-eabi-gcc' ] },
-  'lpc17xx' : { 'cpus' : [ 'LPC1768' ], 'toolchains' : [ 'arm-gcc', 'codesourcery', 'devkitarm', 'arm-eabi-gcc' ] }
+  'lpc17xx' : { 'cpus' : [ 'LPC1768' ], 'toolchains' : [ 'arm-gcc', 'codesourcery', 'devkitarm', 'arm-eabi-gcc' ] },
+  'lpc2134' : { 'cpus' : [ 'LPC2134' ], 'toolchains' : [ 'arm-gcc', 'codesourcery', 'devkitarm', 'arm-eabi-gcc' ] }
 }
 
 # List of board/CPU combinations
@@ -100,7 +100,7 @@ board_list = { 'SAM7-EX256' : [ 'AT91SAM7X256', 'AT91SAM7X512' ],
                'EAGLE-100' : [ 'LM3S6918' ],
                'ELUA-PUC' : ['LPC2468' ],
                'MBED' : ['LPC1768'],
-               'MIZAR32' : [ 'AT32UC3A0128' ],
+	       'TK102-2' : ['LPC2134']
             }
 
 cpu_list = sum([board_list[i] for i in board_list],[])
@@ -130,8 +130,7 @@ romfs = { 'bisect' : [ 'bisect.lua' ],
           'tetrives' : [ 'tetrives.lua' ],
           'snake' : [ 'snake.lua' ],
           'dataflash' : [ 'dataflash.lua' ],
-          'pachube' : [ 'pachube_demo.lua' ],
-          'inttest' : [ 'inttest.lua' ]
+          'pachube' : [ 'pachube_demo.lua' ]
         }
 
 # List of board/romfs data combinations
@@ -141,7 +140,7 @@ file_list = { 'SAM7-EX256' : [ 'bisect', 'hangman' , 'led', 'piano', 'hello', 'i
               'EK-LM3S6965' : [ 'bisect', 'hangman', 'pong', 'led', 'piano', 'pwmled', 'hello', 'info', 'morse', 'adcscope', 'adcpoll', 'logo', 'tetrives' ],
               'EK-LM3S9B92' : [ 'bisect', 'hangman', 'led', 'pwmled', 'hello', 'info', 'adcscope','adcpoll', 'life' ],
               'STR9-COMSTICK' : [ 'bisect', 'hangman', 'led', 'hello', 'info' ],
-              'STR-E912' : [ 'bisect', 'hangman', 'led', 'hello', 'info', 'piano', 'adcscope' ],
+              'STR-E912' : [ 'bisect', 'hangman', 'led', 'hello', 'info', 'piano' ],
               'PC' : [ 'bisect', 'hello', 'info', 'life', 'hangman' ],
               'SIM' : [ 'bisect', 'hello', 'info', 'life', 'hangman' ],
               'LPC-H2888' : [ 'bisect', 'hangman', 'led', 'hello', 'info' ],
@@ -151,9 +150,9 @@ file_list = { 'SAM7-EX256' : [ 'bisect', 'hangman' , 'led', 'piano', 'hello', 'i
               'ATEVK1101' : [ 'bisect', 'led', 'hello', 'info', 'dataflash' ],
               'ET-STM32' : [ 'hello', 'hangman', 'info', 'bisect','adcscope','adcpoll', 'dualpwm', 'pwmled' ],
               'EAGLE-100' : [ 'bisect', 'hangman', 'lhttpd', 'led', 'hello', 'info' ],
-              'ELUA-PUC' : [ 'bisect', 'hangman', 'led', 'hello', 'info', 'pwmled', 'adcscope', 'adcpoll', 'inttest' ],
+              'ELUA-PUC' : [ 'bisect', 'hangman', 'led', 'hello', 'info', 'pwmled', 'adcscope', 'adcpoll' ],
               'MBED' : [ 'bisect', 'hangman', 'hello', 'info', 'led', 'pwmled', 'dualpwm', 'life', 'adcscope', 'adcpoll' ],
-              'MIZAR32' : [ ],
+              'TK102-2' : [ ],
 }
 
 comp = Environment( tools = [],
@@ -303,7 +302,7 @@ if not GetOption( 'help' ):
 
   # CPU/allocator mapping (if allocator not specified)
   if comp['allocator'] == 'auto':
-    if comp['board'] in ['LPC-H2888', 'ATEVK1100', 'MBED', 'MIZAR32']:
+    if comp['board'] in ['LPC-H2888', 'ATEVK1100', 'MBED']:
       comp['allocator'] = 'multiple'
     else:
       comp['allocator'] = 'newlib'
@@ -311,16 +310,12 @@ if not GetOption( 'help' ):
   # Build the compilation command now
   compcmd = ''
   if comp['romfs'] == 'compile':
-    if syspl.system() == 'Windows':
-      suffix = '.exe'
-    else:
-      suffix = '.elf'
     # First check for luac.cross in the current directory
-    if not os.path.isfile( "luac.cross" + suffix ):
+    if not os.path.isfile( "luac.cross" ):
       print "The eLua cross compiler was not found."
       print "Build it by running 'scons -f cross-lua.py'"
       Exit( -1 )
-    compcmd = os.path.join( os.getcwd(), 'luac.cross%s -ccn %s -cce %s -o %%s -s %%s' % ( suffix, toolset[ 'cross_%s' % comp['target'] ], toolset[ 'cross_cpumode' ] ) )
+    compcmd = os.path.join( os.getcwd(), 'luac.cross -ccn %s -cce %s -o %%s -s %%s' % ( toolset[ 'cross_%s' % comp['target'] ], toolset[ 'cross_cpumode' ] ) )
   elif comp['romfs'] == 'compress':
     compcmd = 'lua luasrcdiet.lua --quiet --maximum --opt-comments --opt-whitespace --opt-emptylines --opt-eols --opt-strings --opt-numbers --opt-locals -o %s %s'
 
@@ -369,7 +364,7 @@ if not GetOption( 'help' ):
 
   lua_full_files = " " + " ".join( [ "src/lua/%s" % name for name in lua_files.split() ] )
   
-  comp.Append(CPPPATH = ['inc', 'inc/newlib',  'inc/remotefs', 'src/platform', 'src/lua'])
+  comp.Append(CPPPATH = ['inc', 'inc/newlib',  'inc/remotefs', 'src/lua'])
   if comp['target'] == 'lualong':
     conf.env.Append(CPPDEFINES = ['LUA_NUMBER_INTEGRAL'])
 
@@ -380,7 +375,7 @@ if not GetOption( 'help' ):
   local_libs = ''
 
   # Application files
-  app_files = " src/main.c src/romfs.c src/semifs.c src/xmodem.c src/shell.c src/term.c src/common.c src/buf.c src/elua_adc.c src/dlmalloc.c src/salloc.c src/luarpc_elua_uart.c src/elua_int.c "
+  app_files = " src/main.c src/romfs.c src/semifs.c src/xmodem.c src/shell.c src/term.c src/common.c src/buf.c src/elua_adc.c src/dlmalloc.c src/salloc.c src/luarpc_elua_uart.c "
 
   # Newlib related files
   newlib_files = " src/newlib/devman.c src/newlib/stubs.c src/newlib/genstd.c src/newlib/stdtcp.c"
