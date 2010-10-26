@@ -58,7 +58,7 @@ void GPIOResetInit( void )
   IOSET1 = 0x00000000;
     
   FIO0DIR = 0x00000000;
-  FIO1DIR = 0x00010000; // P1.16 is output
+  FIO1DIR = 0x00000000; // P1.16 is output
     
   FIO0SET = 0x00000000;
   FIO1SET = 0x00000000;
@@ -92,7 +92,7 @@ void ConfigurePLL ( void )
     PLLFEED = 0x55;
   }
 
-  VPBDIV = Fpdiv;
+  VPBDIV = Fpdiv_bits;
 
   PLLCON = 0;				/* Disable PLL, disconnected */
   PLLFEED = 0xaa;
@@ -142,7 +142,6 @@ void TargetResetInit(void)
   //blink_led(2);
 
 
-#ifdef TIMING
   /* Configure PLL, switch from IRC to Main OSC */
   ConfigurePLL();
 
@@ -161,7 +160,7 @@ void TargetResetInit(void)
 #endif
 #endif
   MAMCR = 2;
-#endif
+
   init_VIC();
   //  blink_led(4);
 }

@@ -109,8 +109,8 @@ int platform_init()
   platform_setup_cpu();
   // Initialize console UART
 
-  //platform_uart_setup( CON_UART_ID, CON_UART_SPEED, 8, PLATFORM_UART_PARITY_NONE, PLATFORM_UART_STOPBITS_1 );
-    PINSEL0 = 0x00050005;
+  platform_uart_setup( CON_UART_ID, CON_UART_SPEED, 8, PLATFORM_UART_PARITY_NONE, PLATFORM_UART_STOPBITS_1 );
+  //  PINSEL0 = 0x00050005;
   
   platform_uart_send(0, 'a');
 
@@ -118,7 +118,7 @@ int platform_init()
   platform_setup_extmem();   
 
   // Setup peripherals
-  //platform_setup_timers();
+  // platform_setup_timers();
   platform_uart_send(0, 'b');
   //platform_setup_pwm();
   platform_uart_send(0, 'c');
@@ -271,6 +271,7 @@ u32 platform_uart_setup( unsigned id, u32 baud, int databits, int parity, int st
   //temp = ( Fpclk_UART >> 4 ) / baud;
   uclk = Fpclk >> 4;
 
+#if USE_FRACTIONAL_DIVIDER // doesn't work for me. 20101016, andreas
   for( mul_frac_div = 1; mul_frac_div <= 15; mul_frac_div++ )
   {
     for( div_add_frac_div = 1; div_add_frac_div <= 15; div_add_frac_div++ )
@@ -301,12 +302,19 @@ u32 platform_uart_setup( unsigned id, u32 baud, int databits, int parity, int st
       }
     }
   }
+#else
+  div_opt = (Fpclk / 16) / baud;
+  temp = div_opt;
+#endif
+
   // Set baud and divisors
   *UxLCR |= UART_DLAB_ENABLE;
   *UxDLM = div_opt >> 8;
   *UxDLL = div_opt & 0xFF;
   *UxLCR &= ~UART_DLAB_ENABLE;
+#ifdef USE_FRACTIONAL_DIVIDER
   *UxFDR = ( ( mul_frac_div_opt << 4 ) & 0xF0 ) | ( div_add_opt & 0x0F );
+#endif
 
   // Enable and reset Tx and Rx FIFOs
   *UxFCR = UART_FIFO_ENABLE | UART_RXFIFO_RESET | UART_TXFIFO_RESET;

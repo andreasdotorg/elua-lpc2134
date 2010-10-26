@@ -32,6 +32,16 @@
 
 #define Fpdiv 4
 
+#if (Fpdiv == 4)
+# define Fpdiv_bits 0
+#endif
+#if (Fpdiv == 2)
+# define Fpdiv_bits 2
+#endif
+#if (Fpdiv == 1)
+# define Fpdiv_bits 1
+#endif
+
 /* System frequence,should be (1~32)multiples of Fosc,and should be equal or 
 less than 60MHz. For TK102-2, we choose 55296000 */
 #define Fcclk   (Fosc * Fmult)
