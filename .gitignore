@@ -1,0 +1,10 @@
+*.o
+*.pyc
+.sconf_temp
+.sconsign.dblite
+config.log
+*.elf
+*.hex
+*.map
+inc/romfiles.h
+scons-line

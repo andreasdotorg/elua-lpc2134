@@ -47,7 +47,6 @@ void TargetInit(void)
 void GPIOResetInit( void )
 {
   /* Reset all GPIO pins to default: primary function */
-  /* Exception: P1.16 (debug LED) to output */
   PINSEL0 = 0x00000000;
   PINSEL1 = 0x00000000;
   PINSEL2 = 0x00000000;
@@ -58,13 +57,11 @@ void GPIOResetInit( void )
   IOSET1 = 0x00000000;
     
   FIO0DIR = 0x00000000;
-  FIO1DIR = 0x00000000; // P1.16 is output
+  FIO1DIR = 0x00000000;
     
   FIO0SET = 0x00000000;
   FIO1SET = 0x00000000;
   
-  SCS = 3; // enable fast GPIO
-
   return;        
 }
 
@@ -83,7 +80,6 @@ void GPIOResetInit( void )
 ******************************************************************************/
 void ConfigurePLL ( void )
 {
-  DWORD MValue, NValue;
 
   if ( PLLSTAT & (1 << 9) )
   {
@@ -163,27 +159,6 @@ void TargetResetInit(void)
 
   init_VIC();
   //  blink_led(4);
-}
-
-void set_debug_led (void) {
-  FIO1CLR = 0x00010000;
-}
-
-void clear_debug_led (void) {
-  FIO1SET = 0x00010000;
-}
-
-void blink_led (int count) {
-  int i,j;
-
-  for(j=0;j<100000;j++) { }
-  for(i=0;i<count;i++) {
-    set_debug_led();
-    for(j=0;j<100000;j++) { }
-    clear_debug_led();
-    for(j=0;j<100000;j++) { }
-  }
-  for(j=0;j<100000;j++) { }
 }
 
 /******************************************************************************
